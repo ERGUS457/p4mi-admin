@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  STAF_VERIFIKASI
+  STAF_LAPANGAN
+}
+
+enum StatusCpmi {
+  PENDAFTARAN
+  VERIFIKASI
+  PELATIHAN
+  PENEMPATAN
+  BERANGKAT
+  SELESAI
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(STAF_LAPANGAN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  logs      StatusLog[]
+}
+
+model Agensi {
+  id        String   @id @default(cuid())
+  nama      String
+  alamat    String
+  kontak    String
+  cpmi      Cpmi[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model JadwalPelatihan {
+  id             String   @id @default(cuid())
+  namaKegiatan   String
+  tanggalMulai   DateTime
+  tanggalSelesai DateTime
+  lokasi         String
+  cpmi           Cpmi[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Cpmi {
+  id            String      @id @default(cuid())
+  nik           String      @unique
+  kk            String
+  namaLengkap   String
+  tempatLahir   String
+  tanggalLahir  DateTime
+  jenisKelamin  String
+  alamatAsal    String
+  pasporNo      String?
+  telepon       String
+  negaraTujuan  String
+  sektor        String
+  status        StatusCpmi  @default(PENDAFTARAN)
+  
+  agensiId      String?
+  agensi        Agensi?     @relation(fields: [agensiId], references: [id])
+  
+  jadwalId      String?
+  jadwal        JadwalPelatihan? @relation(fields: [jadwalId], references: [id])
+  
+  dokumen       Dokumen[]
+  statusLogs    StatusLog[]
+  
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Dokumen {
+  id          String   @id @default(cuid())
+  cpmiId      String
+  cpmi        Cpmi     @relation(fields: [cpmiId], references: [id], onDelete: Cascade)
+  tipe        String   // KTP, KK, PASPOR, VISA, MEDICAL, SERTIFIKAT
+  filePath    String
+  createdAt   DateTime @default(now())
+}
+
+model StatusLog {
+  id          String     @id @default(cuid())
+  cpmiId      String
+  cpmi        Cpmi       @relation(fields: [cpmiId], references: [id], onDelete: Cascade)
+  statusLama  StatusCpmi
+  statusBaru  StatusCpmi
+  catatan     String?
+  createdById String
+  createdBy   User       @relation(fields: [createdById], references: [id])
+  createdAt   DateTime   @default(now())
+}
