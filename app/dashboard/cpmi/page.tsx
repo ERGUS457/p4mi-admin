@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import AddCpmiModal from "@/components/cpmi/add-cpmi-modal"
+import Swal from "sweetalert2"
+import { Edit, Trash2 } from "lucide-react"
 
 export default function CpmiPage() {
   const [data, setData] = useState<any[]>([])
@@ -13,11 +15,7 @@ export default function CpmiPage() {
     try {
       const res = await fetch("/api/cpmi")
       const json = await res.json()
-      if (Array.isArray(json)) {
-        setData(json)
-      } else {
-        setData([])
-      }
+      setData(Array.isArray(json) ? json : [])
     } catch (e) {
       console.error(e)
       setData([])
@@ -29,6 +27,46 @@ export default function CpmiPage() {
   useEffect(() => {
     fetchData()
   }, [])
+
+  const handleDelete = async (id: string) => {
+    const confirm = await Swal.fire({
+      title: "Hapus data?",
+      text: "Data yang dihapus tidak dapat dipulihkan.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
+    })
+    if (confirm.isConfirmed) {
+      try {
+        const res = await fetch(`/api/cpmi/${id}`, { method: "DELETE" })
+        if (!res.ok) throw new Error((await res.json()).error)
+        Swal.fire({ icon: "success", title: "Terhapus", confirmButtonColor: "#059669" })
+        fetchData()
+      } catch (err: any) {
+        Swal.fire({ icon: "error", title: "Gagal", text: err.message, confirmButtonColor: "#059669" })
+      }
+    }
+  }
+
+  const handleEdit = (row: any) => {
+    // open modal with prefilled data; reuse AddCpmiModal in 'edit' mode
+    // For simplicity we just reuse the same modal but with initial values
+    // Implemented in AddCpmiModal as optional prop `initialData` and `mode="edit"`
+    // Here we set a temporary state to pass to modal
+    setEditData(row)
+    setIsEditOpen(true)
+  }
+
+  // State for edit modal
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [editData, setEditData] = useState<any>(null)
+
+  const closeEdit = () => {
+    setIsEditOpen(false)
+    setEditData(null)
+  }
 
   return (
     <div className="space-y-6">
@@ -56,22 +94,40 @@ export default function CpmiPage() {
                 <TableHead>Telepon</TableHead>
                 <TableHead>Negara Tujuan</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((item) => (
+              {data.map(item => (
                 <TableRow key={item.id}>
                   <TableCell>{item.nik}</TableCell>
                   <TableCell>{item.namaLengkap}</TableCell>
                   <TableCell>{item.telepon}</TableCell>
                   <TableCell>{item.negaraTujuan}</TableCell>
                   <TableCell>{item.status}</TableCell>
+                  <TableCell className="flex space-x-2">
+                    <button onClick={() => handleEdit(item)} className="text-emerald-600 hover:text-emerald-800" title="Edit">
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:text-red-800" title="Hapus">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         )}
       </div>
+
+      {/* Edit Modal (reuse AddCpmiModal) */}
+      {isEditOpen && editData && (
+        <AddCpmiModal
+          onRefresh={() => { fetchData(); closeEdit(); }}
+          initialData={editData}
+          mode="edit"
+        />
+      )}
     </div>
   )
 }
