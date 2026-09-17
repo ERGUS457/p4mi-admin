@@ -49,7 +49,7 @@ export default function LoginPage() {
               className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
             {errors.email && (
-              <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>
+              <p className="text-xs text-red-500 mt-1">{String(errors.email.message || "")}</p>
             )}
           </div>
           <div>
@@ -60,7 +60,7 @@ export default function LoginPage() {
               className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
             {errors.password && (
-              <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>
+              <p className="text-xs text-red-500 mt-1">{String(errors.password.message || "")}</p>
             )}
           </div>
           <button
